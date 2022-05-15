@@ -1,11 +1,11 @@
 import { createApp } from 'vue'
 import { createPinia } from "pinia"
-import { piniaStorage } from "pinia-storage"
 import App from './App.vue'
+import { syncStorage } from "./plugin";
 
 createApp(App)
   .use(
     createPinia()
-      .use(piniaStorage)
+      .use(syncStorage())
   )
   .mount('#app')

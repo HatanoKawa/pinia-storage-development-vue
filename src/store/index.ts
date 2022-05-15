@@ -13,10 +13,5 @@ export const useBaseStore = defineStore('base', {
     decrement() {
       this.count--;
     },
-  },
-  storage: {
-    count: {
-      validTime: '20s'
-    }
   }
 })
