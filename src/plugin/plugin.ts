@@ -3,23 +3,51 @@ import {
   BindOptionsArray,
   BindOptionArrayItem,
   fullOptionDefinition,
-  StorageDetailOptions
+  StorageDetailOptions,
+  BindToStorageFunction, ExpireTime
 } from './types';
 import {PiniaPluginContext, Store} from "pinia";
-import {get, isObject, isArray, has} from 'lodash-es';
+import {get, isObject, isArray, has, set, isEqual} from 'lodash-es';
 
-const _useBindStorage = (option: BindOptionArrayItem) => {
-  // set storage key
-  const storageKey = option.storageKey ?? option.stateKey
-  return (newVal: any) => {
-    // todo 需要用serializer替换
-    const dataToSet = isObject(newVal) || isArray(newVal) ? JSON.stringify(newVal) : newVal
-    if (localStorage.getItem(storageKey) === dataToSet) return
-    localStorage.setItem(storageKey, dataToSet)
+const _calculateExpireTime = (expire: ExpireTime) => {
+  if (typeof expire === 'number') {
+    return expire;
+  } else {
+    return 0;
   }
 }
 
-const _parseOptions = (options: fullOptionDefinition, store: Store): [Array<BindOptionArrayItem>] => {
+const _setExpireTime = (item: any, expire: ExpireTime) => ({
+  _v: item,
+  _t: expire && Date.now() + _calculateExpireTime(expire)
+})
+
+const _useBindToStorage = (option: BindOptionArrayItem): BindToStorageFunction => {
+  // set storage key
+  const storageKey = option.storageKey ?? option.stateKey
+  const serializer = option.serializer ?? (() => {})
+  return (newVal: any, currentStorage: Object) => {
+    // todo 需要用serializer替换
+    const serializeRes = serializer(newVal)
+    const dataToSet = serializeRes !== undefined ? (typeof serializeRes === 'boolean' ? (serializeRes ? newVal : undefined) : serializeRes) : newVal
+    const oldData = get(currentStorage, storageKey + '._v') || {}
+    if (dataToSet !== undefined) {
+      if (isObject(dataToSet) || isArray(dataToSet)) {
+        if (!isEqual(dataToSet, oldData)) {
+          set(currentStorage, storageKey, _setExpireTime(dataToSet, option.expire || 0))
+          return true
+        }
+      } else if (oldData !== dataToSet) {
+        // todo test data 1000ms here
+        set(currentStorage, storageKey, _setExpireTime(dataToSet, option.expire || 1000))
+        return true
+      }
+    }
+    return false
+  }
+}
+
+const _parseOptions = (options: fullOptionDefinition, store: Store): [Array<BindOptionArrayItem>, string] => {
   if (typeof options === 'boolean') {
     if (options) {
       return [
@@ -27,13 +55,14 @@ const _parseOptions = (options: fullOptionDefinition, store: Store): [Array<Bind
           .map(key => ({
             stateKey: key,
             storageKey: key
-          }))
+          })),
+        '_pinia_storage_base'
       ]
     }
   } else {
     // todo 解析storageOptions
   }
-  return [[]]
+  return [[], '_pinia_storage_base']
 }
 
 export function bindStorage() {
@@ -43,7 +72,7 @@ export function bindStorage() {
     const rawStorageOptions = context.options.storage
     if (!rawStorageOptions) return
 
-    const [storageOptions] = _parseOptions(rawStorageOptions, context.store)
+    const [storageOptions, storageName] = _parseOptions(rawStorageOptions, context.store)
     console.warn('storageOptions', storageOptions)
 
     // 存储stateKey和对应的更新方法，{stateKey, Fn}
@@ -51,17 +80,24 @@ export function bindStorage() {
     storageOptions.forEach(i => {
       storeList.push({
         stateKey: i.stateKey,
-        fn: _useBindStorage(i)
+        fn: _useBindToStorage(i)
       })
     })
 
     context.store.$subscribe((mutation, state) => {
-      // todo 利用has和get分发变化
+      // 利用has和get分发变化
+      const currentStorage = JSON.parse(localStorage.getItem(storageName) || '{}')
+      let changeFlag = false
       storeList.forEach(i => {
         if (has(state, i.stateKey)) {
-          i.fn(get(state, i.stateKey))
+          if (i.fn(get(state, i.stateKey), currentStorage)) {
+            changeFlag =true
+          }
         }
       })
+      if (changeFlag) {
+        localStorage.setItem(storageName, JSON.stringify(currentStorage))
+      }
     })
 
     // console.warn(context)

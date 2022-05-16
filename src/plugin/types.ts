@@ -1,9 +1,12 @@
 import 'pinia';
 
 type StorageType = 'local' | 'session'
-type StorageSerializer = <T>(storeVal: T) => boolean | string | void
+type StorageSerializer = <T>(storeVal: T) => any | void
 type StorageParser = <T>(rawStorageValue: string) => boolean | T | void
 type ExpireCallback = <T>(oldVal: T, expireTime: number) => void
+export type ExpireTime = Date | number | string
+export type BindOptionsArray = Array<BindOptionArrayItem | string>
+export type BindToStorageFunction = (newVal: any, currentStorage: Object) => boolean
 
 // base type definition
 interface BindOptionBase {
@@ -14,10 +17,11 @@ interface BindOptionBase {
   // is overwritten by data from storage, default as true
   setFromStorage?: boolean
   // expireTime like 1000|'1d2m3s4ms'|new Date(), default as 0, means never expire
-  expire?: number | string | Date
+  expire?: ExpireTime
   // callback function, triggered when data is expired
   expireCallback?: ExpireCallback
-  // storage serializer, default as JSON.stringify
+  // storage serializer, default as () =>{}
+  // return true or void will use source data, return false will stop setting, other situation will use return value
   serializer?: StorageSerializer
   // parser serializer, default as JSON.parse
   parser?: StorageParser
@@ -32,8 +36,6 @@ interface BindOptionsObject {
 export interface BindOptionArrayItem extends BindOptionBase {
   stateKey: string;
 }
-
-export type BindOptionsArray = Array<BindOptionArrayItem | string>
 
 // complete type definition
 export interface StorageDetailOptions {
@@ -56,5 +58,5 @@ declare module 'pinia' {
 
 export interface storeToStorageItem {
   stateKey: string
-  fn: Function
+  fn: BindToStorageFunction
 }
