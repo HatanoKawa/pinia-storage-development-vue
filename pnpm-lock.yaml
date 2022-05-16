@@ -1,6 +1,7 @@
 lockfileVersion: 5.3
 
 specifiers:
+  '@types/lodash-es': ^4.17.6
   '@vitejs/plugin-vue': ^2.3.3
   lodash-es: ^4.17.21
   pinia: ^2.0.14
@@ -10,6 +11,7 @@ specifiers:
   vue-tsc: ^0.34.7
 
 dependencies:
+  '@types/lodash-es': registry.npmmirror.com/@types/lodash-es/4.17.6
   lodash-es: registry.npmmirror.com/lodash-es/4.17.21
   pinia: 2.0.14_typescript@4.6.4+vue@3.2.33
   vue: 3.2.33
@@ -339,6 +341,20 @@ packages:
       '@vue/runtime-dom': 3.2.33
       '@vue/server-renderer': 3.2.33_vue@3.2.33
       '@vue/shared': 3.2.33
+    dev: false
+
+  registry.npmmirror.com/@types/lodash-es/4.17.6:
+    resolution: {integrity: sha512-R+zTeVUKDdfoRxpAryaQNRKk3105Rrgx2CFRClIgRGaqDTdjsm8h6IYA8ir584W3ePzkZfst5xIgDwYrlh9HLg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@types/lodash-es/-/lodash-es-4.17.6.tgz}
+    name: '@types/lodash-es'
+    version: 4.17.6
+    dependencies:
+      '@types/lodash': registry.npmmirror.com/@types/lodash/4.14.182
+    dev: false
+
+  registry.npmmirror.com/@types/lodash/4.14.182:
+    resolution: {integrity: sha512-/THyiqyQAP9AfARo4pF+aCGcyiQ94tX/Is2I7HofNRqoYLgN1PBoOWu2/zTA5zMxzP5EFutMtWtGAFRKUe961Q==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@types/lodash/-/lodash-4.14.182.tgz}
+    name: '@types/lodash'
+    version: 4.14.182
     dev: false
 
   registry.npmmirror.com/esbuild-android-64/0.14.39:

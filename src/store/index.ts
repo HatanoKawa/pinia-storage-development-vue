@@ -4,6 +4,7 @@ export const useBaseStore = defineStore('base', {
   state: () => {
     return {
       count: 0,
+      testObj: { count: 1 }
     };
   },
   actions: {
@@ -13,5 +14,6 @@ export const useBaseStore = defineStore('base', {
     decrement() {
       this.count--;
     },
-  }
+  },
+  storage: true
 })

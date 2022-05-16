@@ -1,7 +1,21 @@
 <script setup lang="ts">
+import {storeToStorageItem, BindOptionsArray, BindOptionArrayItem, fullOptionDefinition} from './plugin/types';
 import { useBaseStore } from "./store";
-
 const base = useBaseStore()
+
+window.addEventListener('storage', (e) => {
+  console.warn(e)
+});
+
+const setLocalStorage = () => {
+  window.localStorage.setItem('testCont', base.count + '')
+  base.increment()
+}
+
+const setSessionStorage = () => {
+  window.sessionStorage.setItem('testCont', base.count + '')
+  base.increment()
+}
 </script>
 
 <template>
@@ -10,6 +24,10 @@ const base = useBaseStore()
     {{ base.count }}
     <button @click="base.increment">plus</button>
     <button @click="base.decrement">minus</button>
+    <button @click="setLocalStorage">set localStorage</button>
+    <button @click="setSessionStorage">set sessionStorage</button>
+    <!--<div><iframe src="http://localhost:3000" /></div>
+    <div><iframe src="http://localhost:3000" /></div>-->
   </div>
 </template>
 

@@ -2,7 +2,7 @@ import 'pinia';
 
 type StorageType = 'local' | 'session'
 type StorageSerializer = <T>(storeVal: T) => boolean | string | void
-type StorageParser = <T>(rawStorageValue: string) => T
+type StorageParser = <T>(rawStorageValue: string) => boolean | T | void
 type ExpireCallback = <T>(oldVal: T, expireTime: number) => void
 
 // base type definition
@@ -29,23 +29,32 @@ interface BindOptionsObject {
 }
 
 // type definition for Array
-interface BindOptionArray extends BindOptionBase {
+export interface BindOptionArrayItem extends BindOptionBase {
   stateKey: string;
 }
 
+export type BindOptionsArray = Array<BindOptionArrayItem | string>
+
 // complete type definition
-interface StorageDetailOptions {
+export interface StorageDetailOptions {
   // default setting, true is an alias for 'local'
   defaultUse?: boolean | StorageType
   // skip keys, only works when defaultUse option isn't false
   omit?: string[]
   // option to enable the storage watcher to sync data between tabs, default as false
   isShared?: boolean
-  storageOptions?: BindOptionsObject | Array<BindOptionArray | string>
+  storageOptions?: BindOptionsObject | Array<BindOptionArrayItem | string>
 }
+
+export type fullOptionDefinition = boolean | StorageDetailOptions | BindOptionsObject | BindOptionsArray
 
 declare module 'pinia' {
   export interface DefineStoreOptionsBase<S, Store> {
-    storage?: boolean | BindOptionsObject | Array<BindOptionArray | string> | StorageDetailOptions
+    storage?: fullOptionDefinition
   }
+}
+
+export interface storeToStorageItem {
+  stateKey: string
+  fn: Function
 }
