@@ -25,11 +25,11 @@ const _setExpireTime = (item: any, expire: ExpireTime) => ({
 const _useBindToStorage = (option: BindOptionArrayItem): BindToStorageFunction => {
   // set storage key
   const storageKey = option.storageKey ?? option.stateKey
-  const serializer = option.serializer ?? (() => {})
+  const setter = option.setter ?? (() => {})
   return (newVal: any, currentStorage: Object) => {
-    // todo 需要用serializer替换
-    const serializeRes = serializer(newVal)
-    const dataToSet = serializeRes !== undefined ? (typeof serializeRes === 'boolean' ? (serializeRes ? newVal : undefined) : serializeRes) : newVal
+    // todo 需要用setter替换
+    const setterRes = setter(newVal)
+    const dataToSet = setterRes !== undefined ? (typeof setterRes === 'boolean' ? (setterRes ? newVal : undefined) : setterRes) : newVal
     const oldData = get(currentStorage, storageKey + '._v') || {}
     if (dataToSet !== undefined) {
       if (isObject(dataToSet) || isArray(dataToSet)) {

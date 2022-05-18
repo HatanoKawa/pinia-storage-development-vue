@@ -1,8 +1,8 @@
 import 'pinia';
 
 type StorageType = 'local' | 'session'
-type StorageSerializer = <T>(storeVal: T) => any | void
-type StorageParser = <T>(rawStorageValue: string) => boolean | T | void
+type StorageSetter = <T>(storeVal: T) => any | void
+type StorageGetter = <T>(rawStorageValue: string) => boolean | T | void
 type ExpireCallback = <T>(oldVal: T, expireTime: number) => void
 export type ExpireTime = Date | number | string
 export type BindOptionsArray = Array<BindOptionArrayItem | string>
@@ -22,9 +22,9 @@ interface BindOptionBase {
   expireCallback?: ExpireCallback
   // storage serializer, default as () =>{}
   // return true or void will use source data, return false will stop setting, other situation will use return value
-  serializer?: StorageSerializer
+  setter?: StorageSetter
   // parser serializer, default as JSON.parse
-  parser?: StorageParser
+  getter?: StorageGetter
 }
 
 // type definition for Object
