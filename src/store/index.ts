@@ -4,7 +4,7 @@ export const useBaseStore = defineStore('base', {
   state: () => {
     return {
       count: 0,
-      testObj: { count: 1 }
+      testObj: { objCount: 1 }
     };
   },
   actions: {
