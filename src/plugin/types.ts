@@ -12,8 +12,6 @@ export type BindToStorageFunction = (newVal: any, currentStorage: Object) => boo
 interface BindOptionBase {
   // sync use localStorage / sessionStorage, default as local
   storageType?: StorageType
-  // storage item key will be `storageKey/store.$id`, default as pinia-storage
-  storageKey?: string
   // is overwritten by data from storage, default as true
   setFromStorage?: boolean
   // expireTime like 1000|'1d2m3s4ms'|new Date(), default as 0, means never expire

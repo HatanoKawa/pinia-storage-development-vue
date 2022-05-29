@@ -24,7 +24,7 @@ const _setExpireTime = (item: any, expire: ExpireTime) => ({
 
 const _useBindToStorage = (option: BindOptionArrayItem): BindToStorageFunction => {
   // set storage key
-  const storageKey = option.storageKey ?? option.stateKey
+  const storageKey = option.stateKey
   const setter = option.setter ?? (() => {})
   return (newVal: any, currentStorage: Object) => {
     // todo 需要用setter替换
@@ -53,8 +53,7 @@ const _parseOptions = (options: fullOptionDefinition, store: Store): [Array<Bind
       return [
         Object.keys(store.$state)
           .map(key => ({
-            stateKey: key,
-            storageKey: key
+            stateKey: key
           })),
         '_pinia_storage_base'
       ]
