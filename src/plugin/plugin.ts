@@ -1,10 +1,11 @@
 import {
   storeToStorageItem,
-  BindOptionsArray,
+  StorageType,
+  BindOptionsObject,
   BindOptionArrayItem,
   fullOptionDefinition,
   StorageDetailOptions,
-  BindToStorageFunction, ExpireTime
+  BindToStorageFunction, ExpireTime, BindOptionBase
 } from './types';
 import {PiniaPluginContext, Store} from "pinia";
 import {get, isObject, isArray, has, set, isEqual} from 'lodash-es';
@@ -38,8 +39,7 @@ const _useBindToStorage = (option: BindOptionArrayItem): BindToStorageFunction =
           return true
         }
       } else if (oldData !== dataToSet) {
-        // todo test data 1000ms here
-        set(currentStorage, storageKey, _setExpireTime(dataToSet, option.expire || 1000))
+        set(currentStorage, storageKey, _setExpireTime(dataToSet, option.expire || 0))
         return true
       }
     }
@@ -47,31 +47,73 @@ const _useBindToStorage = (option: BindOptionArrayItem): BindToStorageFunction =
   }
 }
 
-const _parseOptions = (options: fullOptionDefinition, store: Store): [Array<BindOptionArrayItem>, string] => {
-  if (typeof options === 'boolean') {
-    if (options) {
-      return [
-        Object.keys(store.$state)
-          .map(key => ({
-            stateKey: key
-          })),
-        '_pinia_storage_base'
-      ]
-    }
+export const _parseOptions = (options: fullOptionDefinition, store: Store): [Array<BindOptionArrayItem>, string, boolean | StorageType] => {
+  console.warn('//////////////////////////////parse options start//////////////////////////////')
+  console.warn('options input: ', options)
+  let storageOptions: Array<BindOptionArrayItem> = []
+  let defaultStorageType: boolean | StorageType = false
+  let storageName = store.$id
+  if (options === true || options === 'local' || options === 'session') {
+    storageOptions = Object.keys(store.$state).map(key => ({ stateKey: key }))
+    options === 'session' && (defaultStorageType = 'session')
   } else {
-    // todo 解析storageOptions
+    let sourceOptions = options
+    if (isObject(options) && has(options, 'storageOptions')) {
+      // full options
+      sourceOptions = (options as StorageDetailOptions).storageOptions
+      if (has(options, 'defaultUse')) {
+        defaultStorageType = (options as StorageDetailOptions).defaultUse === true
+          ? 'local'
+          : ((options as StorageDetailOptions).defaultUse as StorageType | false)
+      }
+    } else if (isArray(sourceOptions)) {
+      // array type options
+      storageOptions = sourceOptions.map(i => (
+        typeof i === 'string' ? { stateKey: i } : i
+      ))
+    } else if (isObject(sourceOptions) && !sourceOptions.storageOptions) {
+      // object type options
+      storageOptions = Object.keys(sourceOptions)
+        .map(key => (
+          (sourceOptions as BindOptionsObject)[key] === true
+            ? { stateKey: key }
+            : { stateKey: key, ...((sourceOptions as BindOptionsObject)[key] as BindOptionBase) }
+        ))
+    }
   }
-  return [[], '_pinia_storage_base']
+  console.warn('store id: ' + `_pinia_storage_${storageName}`)
+  console.warn('generated storage options: ', storageOptions)
+  console.warn('//////////////////////////////parse options end//////////////////////////////')
+  return [storageOptions, `_pinia_storage_${storageName}`, defaultStorageType]
+}
+
+const initStorageFlag = () => {
+  // set storageType attribute to judge which storage is changed
+  if (localStorage.getItem('__pinia_storage_store_flag') !== 'local') {
+    localStorage.setItem('__pinia_storage_store_flag', 'local')
+  }
+  if (sessionStorage.getItem('__pinia_storage_store_flag') !== 'session') {
+    sessionStorage.setItem('__pinia_storage_store_flag', 'session')
+  }
 }
 
 export function bindStorage() {
   const localStorageList = []
   const sessionStorageList = []
+
+  // test storage event
+  window.addEventListener('storage', (e: StorageEvent) => {
+    console.warn('changed storage type: ' + e.storageArea!.getItem('__pinia_storage_store_flag'))
+    console.warn('storage event: ', e)
+  })
   return (context: PiniaPluginContext) => {
+    initStorageFlag()
+    
+    console.warn('context', context)
     const rawStorageOptions = context.options.storage
     if (!rawStorageOptions) return
 
-    const [storageOptions, storageName] = _parseOptions(rawStorageOptions, context.store)
+    const [storageOptions, storageFullName] = _parseOptions(rawStorageOptions, context.store)
     console.warn('storageOptions', storageOptions)
 
     // 存储stateKey和对应的更新方法，{stateKey, Fn}
@@ -85,7 +127,7 @@ export function bindStorage() {
 
     context.store.$subscribe((mutation, state) => {
       // 利用has和get分发变化
-      const currentStorage = JSON.parse(localStorage.getItem(storageName) || '{}')
+      const currentStorage = JSON.parse(localStorage.getItem(storageFullName) || '{}')
       let changeFlag = false
       storeList.forEach(i => {
         if (has(state, i.stateKey)) {
@@ -95,7 +137,7 @@ export function bindStorage() {
         }
       })
       if (changeFlag) {
-        localStorage.setItem(storageName, JSON.stringify(currentStorage))
+        localStorage.setItem(storageFullName, JSON.stringify(currentStorage))
       }
     })
 

@@ -1,15 +1,15 @@
 import 'pinia';
 
-type StorageType = 'local' | 'session'
+export type StorageType = 'local' | 'session'
 type StorageSetter = <T>(storeVal: T) => any | void
 type StorageGetter = <T>(rawStorageValue: string) => boolean | T | void
 type ExpireCallback = <T>(oldVal: T, expireTime: number) => void
 export type ExpireTime = Date | number | string
-export type BindOptionsArray = Array<BindOptionArrayItem | string>
+type BindOptionsArray = Array<BindOptionArrayItem | string>
 export type BindToStorageFunction = (newVal: any, currentStorage: Object) => boolean
 
 // base type definition
-interface BindOptionBase {
+export interface BindOptionBase {
   // sync use localStorage / sessionStorage, default as local
   storageType?: StorageType
   // is overwritten by data from storage, default as true
@@ -26,8 +26,8 @@ interface BindOptionBase {
 }
 
 // type definition for Object
-interface BindOptionsObject {
-  [key: string]: BindOptionBase | StorageType
+export interface BindOptionsObject {
+  [key: string]: BindOptionBase | StorageType | true
 }
 
 // type definition for Array
@@ -43,10 +43,10 @@ export interface StorageDetailOptions {
   omit?: string[]
   // option to enable the storage watcher to sync data between tabs, default as false
   isShared?: boolean
-  storageOptions?: BindOptionsObject | Array<BindOptionArrayItem | string>
+  storageOptions: BindOptionsObject | Array<BindOptionArrayItem | string>
 }
 
-export type fullOptionDefinition = boolean | StorageDetailOptions | BindOptionsObject | BindOptionsArray
+export type fullOptionDefinition = StorageDetailOptions | BindOptionsObject | BindOptionsArray | 'local' | 'session' | true
 
 declare module 'pinia' {
   export interface DefineStoreOptionsBase<S, Store> {
