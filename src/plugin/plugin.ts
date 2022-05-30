@@ -55,6 +55,7 @@ export const _parseOptions = (options: fullOptionDefinition, store: Store): [Arr
   let storageOptions: Array<BindOptionArrayItem> = []
   let omitList: Array<string> = []
   if (options === true || options === 'local' || options === 'session') {
+    // simple type options
     storageOptions = Object.keys(store.$state).map(key => ({
       stateKey: key,
       storageType: options === 'session' ? 'session' : 'local',
@@ -64,13 +65,13 @@ export const _parseOptions = (options: fullOptionDefinition, store: Store): [Arr
     let defaultStorage: StorageType = 'local'
     let tempOptions = options
     if (isObject(options) && has(options, 'storageOptions')) {
-      // full type options
-      const fullTypeOptions = options as StorageDetailOptions
-      tempOptions = fullTypeOptions.storageOptions
-      omitList = fullTypeOptions.omit ?? []
+      // detail type options
+      const detailTypeOptions = options as StorageDetailOptions
+      tempOptions = detailTypeOptions.storageOptions
+      omitList = detailTypeOptions.omit ?? []
       if (has(options, 'defaultUse')) {
         useDefaultStorage = true
-        defaultStorage = fullTypeOptions.defaultUse === 'session' ? 'session' : 'local'
+        defaultStorage = detailTypeOptions.defaultUse === 'session' ? 'session' : 'local'
       }
     }
     if (isArray(tempOptions)) {
