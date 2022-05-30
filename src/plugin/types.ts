@@ -5,7 +5,7 @@ type StorageSetter = <T>(storeVal: T) => any | void
 type StorageGetter = <T>(rawStorageValue: string) => boolean | T | void
 type ExpireCallback = <T>(oldVal: T, expireTime: number) => void
 export type ExpireTime = Date | number | string
-type BindOptionsArray = Array<BindOptionArrayItem | string>
+export type BindOptionsArray = Array<BindOptionArrayItem | string>
 export type BindToStorageFunction = (newVal: any, currentStorage: Object) => boolean
 
 // base type definition
@@ -27,7 +27,7 @@ export interface BindOptionBase {
 
 // type definition for Object
 export interface BindOptionsObject {
-  [key: string]: BindOptionBase | StorageType | true
+  [key: string]: BindOptionBase | StorageType
 }
 
 // type definition for Array
@@ -38,7 +38,7 @@ export interface BindOptionArrayItem extends BindOptionBase {
 // complete type definition
 export interface StorageDetailOptions {
   // default setting, true is an alias for 'local'
-  defaultUse?: boolean | StorageType
+  defaultUse?: true | StorageType
   // skip keys, only works when defaultUse option isn't false
   omit?: string[]
   // option to enable the storage watcher to sync data between tabs, default as false

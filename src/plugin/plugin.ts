@@ -5,10 +5,12 @@ import {
   BindOptionArrayItem,
   fullOptionDefinition,
   StorageDetailOptions,
-  BindToStorageFunction, ExpireTime, BindOptionBase
+  BindToStorageFunction,
+  ExpireTime,
+  BindOptionsArray
 } from './types';
 import {PiniaPluginContext, Store} from "pinia";
-import {get, isObject, isArray, has, set, isEqual} from 'lodash-es';
+import {get, isObject, isArray, has, set, isEqual, omit, uniq} from 'lodash-es';
 
 const _calculateExpireTime = (expire: ExpireTime) => {
   if (typeof expire === 'number') {
@@ -47,47 +49,103 @@ const _useBindToStorage = (option: BindOptionArrayItem): BindToStorageFunction =
   }
 }
 
-export const _parseOptions = (options: fullOptionDefinition, store: Store): [Array<BindOptionArrayItem>, string, boolean | StorageType] => {
+export const _parseOptions = (options: fullOptionDefinition, store: Store): [Array<BindOptionArrayItem>, string] => {
   console.warn('//////////////////////////////parse options start//////////////////////////////')
   console.warn('options input: ', options)
   let storageOptions: Array<BindOptionArrayItem> = []
-  let defaultStorageType: boolean | StorageType = false
   let storageName = store.$id
+  let omitList: Array<string> = []
   if (options === true || options === 'local' || options === 'session') {
-    storageOptions = Object.keys(store.$state).map(key => ({ stateKey: key }))
-    defaultStorageType = options === 'session' ? 'session' : 'local'
+    storageOptions = Object.keys(store.$state).map(key => ({
+      stateKey: key,
+      storageType: options === 'session' ? 'session' : 'local',
+    }))
   } else {
-    let sourceOptions = options
+    let useDefaultStorage: boolean = false
+    let defaultStorage: StorageType = 'local'
+    let tempOptions = options
     if (isObject(options) && has(options, 'storageOptions')) {
-      // full options
-      sourceOptions = (options as StorageDetailOptions).storageOptions
+      // full type options
+      const fullTypeOptions = options as StorageDetailOptions
+      tempOptions = fullTypeOptions.storageOptions
+      omitList = fullTypeOptions.omit ?? []
       if (has(options, 'defaultUse')) {
-        defaultStorageType = (options as StorageDetailOptions).defaultUse === true
-          ? 'local'
-          : ((options as StorageDetailOptions).defaultUse as StorageType | false)
+        useDefaultStorage = true
+        defaultStorage = fullTypeOptions.defaultUse === 'session' ? 'session' : 'local'
       }
-    } else if (isArray(sourceOptions)) {
+    }
+    if (isArray(tempOptions)) {
       // array type options
-      storageOptions = sourceOptions.map(i => (
-        typeof i === 'string' ? { stateKey: i } : i
-      ))
-    } else if (isObject(sourceOptions) && !sourceOptions.storageOptions) {
-      // object type options
-      storageOptions = Object.keys(sourceOptions)
-        .map(key => (
-          (sourceOptions as BindOptionsObject)[key] === true
-            ? { stateKey: key }
-            : { stateKey: key, ...((sourceOptions as BindOptionsObject)[key] as BindOptionBase) }
+      const arrayTypeOptions = tempOptions as BindOptionsArray
+      if (useDefaultStorage) {
+        // with defaultUse
+        const arrayKeySet = new Set()
+        const tempStorageOptions: Array<BindOptionArrayItem> = []
+        // manual set options
+        arrayTypeOptions.forEach(i => {
+          arrayKeySet.add(typeof i === 'string' ? i : i.stateKey)
+          tempStorageOptions.push(
+            typeof i === 'string'
+              ? { stateKey: i, storageType: defaultStorage }
+              : { storageType: defaultStorage, ...i }
+          )
+        })
+        // auto set options
+        Object.keys(omit(store.$state, omitList)).forEach(key => {
+          if (!arrayKeySet.has(key)) {
+            tempStorageOptions.push({ stateKey: key!, storageType: defaultStorage })
+          }
+        })
+        storageOptions = tempStorageOptions
+      } else {
+        // without defaultUse
+        storageOptions = arrayTypeOptions.map(i => (
+          typeof i === 'string' ? { stateKey: i, storageType: 'local' } : { storageType: 'local', ...i }
         ))
+      }
+    } else if (isObject(tempOptions) && !has(tempOptions, 'storageOptions')) {
+      // object type options
+      const objectTypeOptions = tempOptions as BindOptionsObject
+      if (useDefaultStorage) {
+        // with defaultUse
+        uniq([
+          ...Object.keys(objectTypeOptions),
+          ...Object.keys(omit(store.$state, omitList))
+        ]).forEach(key => {
+          const option = objectTypeOptions[key]
+          if (has(objectTypeOptions, key)) {
+            // manual set storageType
+            if (typeof option === 'string') {
+              storageOptions.push({ stateKey: key, storageType: option })
+            } else {
+              storageOptions.push({ stateKey: key, storageType: option.storageType ?? defaultStorage, ...option })
+            }
+          } else {
+            // auto set storageType
+            storageOptions.push({ stateKey: key, storageType: defaultStorage })
+          }
+        })
+      } else {
+        // without defaultUse
+        storageOptions = Object.keys(objectTypeOptions)
+          .map(key => {
+            const option = objectTypeOptions[key]
+            if (typeof option === 'string') {
+              return { stateKey: key, storageType: option }
+            } else {
+              return { stateKey: key, storageType: 'local', ...option }
+            }
+          })
+      }
     }
   }
   console.warn('store id: ' + `_pinia_storage_${storageName}`)
   console.warn('generated storage options: ', storageOptions)
   console.warn('//////////////////////////////parse options end//////////////////////////////')
-  return [storageOptions, `_pinia_storage_${storageName}`, defaultStorageType]
+  return [storageOptions, `_pinia_storage_${storageName}`]
 }
 
-const initStorageFlag = () => {
+const _initStorageFlag = () => {
   // set storageType attribute to judge which storage is changed
   if (localStorage.getItem('__pinia_storage_store_flag') !== 'local') {
     localStorage.setItem('__pinia_storage_store_flag', 'local')
@@ -107,7 +165,7 @@ export function bindStorage() {
     console.warn('storage event: ', e)
   })
   return (context: PiniaPluginContext) => {
-    initStorageFlag()
+    _initStorageFlag()
 
     console.warn('context', context)
     const rawStorageOptions = context.options.storage
@@ -132,7 +190,7 @@ export function bindStorage() {
       storeList.forEach(i => {
         if (has(state, i.stateKey)) {
           if (i.fn(get(state, i.stateKey), currentStorage)) {
-            changeFlag =true
+            changeFlag = true
           }
         }
       })
