@@ -55,7 +55,7 @@ export const _parseOptions = (options: fullOptionDefinition, store: Store): [Arr
   let storageName = store.$id
   if (options === true || options === 'local' || options === 'session') {
     storageOptions = Object.keys(store.$state).map(key => ({ stateKey: key }))
-    options === 'session' && (defaultStorageType = 'session')
+    defaultStorageType = options === 'session' ? 'session' : 'local'
   } else {
     let sourceOptions = options
     if (isObject(options) && has(options, 'storageOptions')) {
@@ -108,7 +108,7 @@ export function bindStorage() {
   })
   return (context: PiniaPluginContext) => {
     initStorageFlag()
-    
+
     console.warn('context', context)
     const rawStorageOptions = context.options.storage
     if (!rawStorageOptions) return
