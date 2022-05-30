@@ -53,7 +53,6 @@ export const _parseOptions = (options: fullOptionDefinition, store: Store): [Arr
   console.warn('//////////////////////////////parse options start//////////////////////////////')
   console.warn('options input: ', options)
   let storageOptions: Array<BindOptionArrayItem> = []
-  let storageName = store.$id
   let omitList: Array<string> = []
   if (options === true || options === 'local' || options === 'session') {
     storageOptions = Object.keys(store.$state).map(key => ({
@@ -139,10 +138,10 @@ export const _parseOptions = (options: fullOptionDefinition, store: Store): [Arr
       }
     }
   }
-  console.warn('store id: ' + `_pinia_storage_${storageName}`)
+  console.warn('store id: ' + `_pinia_storage_${store.$id}`)
   console.warn('generated storage options: ', storageOptions)
   console.warn('//////////////////////////////parse options end//////////////////////////////')
-  return [storageOptions, `_pinia_storage_${storageName}`]
+  return [storageOptions, `_pinia_storage_${store.$id}`]
 }
 
 const _initStorageFlag = () => {

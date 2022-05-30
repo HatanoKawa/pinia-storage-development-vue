@@ -41,7 +41,7 @@ export interface StorageDetailOptions {
   defaultUse?: true | StorageType
   // skip keys, only works when defaultUse option isn't false
   omit?: string[]
-  // option to enable the storage watcher to sync data between tabs, default as false
+  // option to enable the storage watcher to sync data between tabs or iframe tags, default as false
   isShared?: boolean
   storageOptions: BindOptionsObject | Array<BindOptionArrayItem | string>
 }
