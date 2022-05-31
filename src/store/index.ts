@@ -16,5 +16,12 @@ export const useBaseStore = defineStore('test_store', {
       this.count--;
     },
   },
-  storage: true
+  storage: {
+    defaultUse: 'local',
+    storageOptions: {
+      count: {
+        expire: '24h'
+      }
+    }
+  }
 })

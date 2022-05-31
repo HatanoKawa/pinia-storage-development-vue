@@ -14,15 +14,35 @@ import {get, isObject, isArray, has, set, isEqual, omit, uniq} from 'lodash-es';
 
 const _calculateExpireTime = (expire: ExpireTime) => {
   if (typeof expire === 'number') {
-    return expire;
+    if (expire > 0) {
+      return expire + Date.now()
+    }
+  } else if (expire instanceof Date) {
+    const expireTime = expire.getTime()
+    if (expireTime > Date.now()) {
+      return expire.getTime()
+    }
   } else {
-    return 0;
+    const d = /(\d+)d/.exec(expire)
+    const h = /(\d+)h/.exec(expire)
+    const m = /(\d+)m/.exec(expire)
+    const s = /(\d+)s/.exec(expire)
+    const ms = /(\d+)ms/.exec(expire)
+    if (d || h || m || s || ms) {
+      return Date.now()
+        + (d ? parseInt(d[1]) * 24 * 60 * 60 * 1000 : 0)
+        + (h ? parseInt(h[1]) * 60 * 60 * 1000 : 0)
+        + (m ? parseInt(m[1]) * 60 * 1000 : 0)
+        + (s ? parseInt(s[1]) * 1000 : 0)
+        + (ms ? parseInt(ms[1]) : 0)
+    }
   }
+  return 0
 }
 
 const _setExpireTime = (item: any, expire: ExpireTime) => ({
   _v: item,
-  _t: expire && Date.now() + _calculateExpireTime(expire)
+  _t: _calculateExpireTime(expire)
 })
 
 const _useBindToStorage = (option: BindOptionArrayItem): BindToStorageFunction => {
