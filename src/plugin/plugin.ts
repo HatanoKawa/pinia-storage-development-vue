@@ -82,25 +82,25 @@ export const _parseOptions = (options: fullOptionDefinition, store: Store): [Arr
         const arrayKeySet = new Set()
         const tempStorageOptions: Array<BindOptionArrayItem> = []
         // manual set options
-        arrayTypeOptions.forEach(i => {
-          arrayKeySet.add(typeof i === 'string' ? i : i.stateKey)
+        arrayTypeOptions.forEach(option => {
+          arrayKeySet.add(typeof option === 'string' ? option : option.stateKey)
           tempStorageOptions.push(
-            typeof i === 'string'
-              ? { stateKey: i, storageType: defaultStorage }
-              : { storageType: defaultStorage, ...i }
+            typeof option === 'string'
+              ? { stateKey: option, storageType: defaultStorage }
+              : { storageType: defaultStorage, ...option }
           )
         })
         // auto set options
         Object.keys(omit(store.$state, omitList)).forEach(key => {
           if (!arrayKeySet.has(key)) {
-            tempStorageOptions.push({ stateKey: key!, storageType: defaultStorage })
+            tempStorageOptions.push({ stateKey: key, storageType: defaultStorage })
           }
         })
         storageOptions = tempStorageOptions
       } else {
         // without defaultUse
-        storageOptions = arrayTypeOptions.map(i => (
-          typeof i === 'string' ? { stateKey: i, storageType: 'local' } : { storageType: 'local', ...i }
+        storageOptions = arrayTypeOptions.map(option => (
+          typeof option === 'string' ? { stateKey: option, storageType: 'local' } : { storageType: 'local', ...option }
         ))
       }
     } else if (isObject(tempOptions) && !has(tempOptions, 'storageOptions')) {
@@ -118,7 +118,7 @@ export const _parseOptions = (options: fullOptionDefinition, store: Store): [Arr
             if (typeof option === 'string') {
               storageOptions.push({ stateKey: key, storageType: option })
             } else {
-              storageOptions.push({ stateKey: key, storageType: option.storageType ?? defaultStorage, ...option })
+              storageOptions.push({ stateKey: key, storageType: defaultStorage, ...option })
             }
           } else {
             // auto set storageType
