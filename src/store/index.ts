@@ -8,6 +8,7 @@ export const useBaseStore = defineStore('test_store', {
       testObj2: { count: 1 }
     };
   },
+
   actions: {
     increment() {
       this.count++;

@@ -7,10 +7,11 @@ import {
   StorageDetailOptions,
   BindToStorageFunction,
   ExpireTime,
-  BindOptionsArray
+  BindOptionsArray,
+  initDataObject
 } from './types';
-import {PiniaPluginContext, Store} from "pinia";
-import {get, isObject, isArray, has, set, isEqual, omit, uniq} from 'lodash-es';
+import {PiniaPluginContext, StateTree, Store} from "pinia";
+import {get, isObject, isArray, has, set, isEqual, omit, uniq, cloneDeep} from 'lodash-es';
 
 const _calculateExpireTime = (expire: ExpireTime) => {
   if (typeof expire === 'number') {
@@ -46,11 +47,13 @@ const _setExpireTime = (item: any, expire: ExpireTime) => ({
 })
 
 const _useBindToStorage = (option: BindOptionArrayItem): BindToStorageFunction => {
+
   // set storage key
   const storageKey = option.stateKey
   const setter = option.setter ?? (() => {})
+
+  // return false means skip setting, true means has been set
   return (newVal: any, currentStorage: Object) => {
-    // todo 需要用setter替换
     const setterRes = setter(newVal)
     const dataToSet = setterRes !== undefined ? (typeof setterRes === 'boolean' ? (setterRes ? newVal : undefined) : setterRes) : newVal
     const oldData = get(currentStorage, storageKey + '._v') || {}
@@ -69,7 +72,7 @@ const _useBindToStorage = (option: BindOptionArrayItem): BindToStorageFunction =
   }
 }
 
-export const _parseOptions = (options: fullOptionDefinition, store: Store): [Array<BindOptionArrayItem>, string] => {
+export const _parseOptions = (options: fullOptionDefinition, store: Store): Array<BindOptionArrayItem> => {
   console.warn('//////////////////////////////parse options start//////////////////////////////')
   console.warn('options input: ', options)
   let storageOptions: Array<BindOptionArrayItem> = []
@@ -162,9 +165,12 @@ export const _parseOptions = (options: fullOptionDefinition, store: Store): [Arr
   console.warn('store id: ' + `_pinia_storage_${store.$id}`)
   console.warn('generated storage options: ', storageOptions)
   console.warn('//////////////////////////////parse options end//////////////////////////////')
-  return [storageOptions, `_pinia_storage_${store.$id}`]
+  return storageOptions
 }
 
+/**
+ * @description set storage flag
+ */
 const _initStorageFlag = () => {
   // set storageType attribute to judge which storage is changed
   if (localStorage.getItem('__pinia_storage_store_flag') !== 'local') {
@@ -173,6 +179,30 @@ const _initStorageFlag = () => {
   if (sessionStorage.getItem('__pinia_storage_store_flag') !== 'session') {
     sessionStorage.setItem('__pinia_storage_store_flag', 'session')
   }
+}
+
+const _initStorageData = (storageOptions: Array<BindOptionArrayItem>, store: Store, storageFullName: string): Array<storeToStorageItem> => {
+  const storeList: Array<storeToStorageItem> = []
+  const initDataToSet: initDataObject = cloneDeep(store.$state)
+  const localStorageData = JSON.parse(localStorage.getItem(storageFullName) || '{}')
+  const sessionStorageData = JSON.parse(sessionStorage.getItem(storageFullName) || '{}')
+  storageOptions.forEach(i => {
+    if (i.setFromStorage !== false) {
+      // use data from storage
+      const storageData = get(i.storageType === 'session' ? sessionStorageData : localStorageData, `${i.stateKey}._v`)
+      if (storageData !== undefined) {
+        // data get from storage is not undefined
+        set(initDataToSet, i.stateKey, storageData)
+        // todo 解决深层数据覆盖的问题
+      }
+    }
+    storeList.push({
+      stateKey: i.stateKey,
+      fn: _useBindToStorage(i)
+    })
+  })
+  store.$patch(initDataToSet)
+  return storeList
 }
 
 export function bindStorage() {
@@ -185,23 +215,18 @@ export function bindStorage() {
     console.warn('storage event: ', e)
   })
   return (context: PiniaPluginContext) => {
-    _initStorageFlag()
-
     console.warn('context', context)
     const rawStorageOptions = context.options.storage
     if (!rawStorageOptions) return
 
-    const [storageOptions, storageFullName] = _parseOptions(rawStorageOptions, context.store)
+    _initStorageFlag()
+
+    const storageFullName = `_pinia_storage_${context.store.$id}`
+    const storageOptions = _parseOptions(rawStorageOptions, context.store)
     console.warn('storageOptions', storageOptions)
 
-    // 存储stateKey和对应的更新方法，{stateKey, Fn}
-    const storeList: Array<storeToStorageItem> = []
-    storageOptions.forEach(i => {
-      storeList.push({
-        stateKey: i.stateKey,
-        fn: _useBindToStorage(i)
-      })
-    })
+    // store stateKey and update function，{stateKey, Fn}
+    const storeList: Array<storeToStorageItem> = _initStorageData(storageOptions, context.store, storageFullName)
 
     context.store.$subscribe((mutation, state) => {
       // 利用has和get分发变化

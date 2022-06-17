@@ -7,12 +7,15 @@ type ExpireCallback = <T>(oldVal: T, expireTime: number) => void
 export type ExpireTime = Date | number | string
 export type BindOptionsArray = Array<BindOptionArrayItem | string>
 export type BindToStorageFunction = (newVal: any, currentStorage: Object) => boolean
+export interface initDataObject {
+  [key: string]: any
+}
 
 // base type definition
 export interface BindOptionBase {
   // sync use localStorage / sessionStorage, default as local
   storageType?: StorageType
-  // is overwritten by data from storage, default as true
+  // is overwritten by data get from storage, default as true
   setFromStorage?: boolean
   // expireTime like 1000|'1d2m3s4ms'|new Date(), default as 0, means never expire
   expire?: ExpireTime
