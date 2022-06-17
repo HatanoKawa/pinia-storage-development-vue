@@ -1,1 +1,1 @@
-export * from './wg_plugin'
+export * from './wg_plugin';
