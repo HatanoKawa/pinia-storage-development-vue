@@ -1,16 +1,16 @@
 import {
-  storeToStorageItem,
+  StoreToStorageItem,
   StorageType,
   BindOptionsObject,
   BindOptionArrayItem,
-  fullOptionDefinition,
+  FullOptionDefinition,
   StorageDetailOptions,
   BindToStorageFunction,
   ExpireTime,
   BindOptionsArray,
-  initDataObject,
+  InitDataObject,
 } from './types';
-import {PiniaPluginContext, StateTree, Store} from 'pinia';
+import {PiniaPluginContext, Store} from 'pinia';
 import {get, isObject, isArray, has, set, isEqual, omit, uniq, cloneDeep} from 'lodash-es';
 
 const _calculateExpireTime = (expire: ExpireTime) => {
@@ -71,7 +71,7 @@ const _useBindToStorage = (option: BindOptionArrayItem): BindToStorageFunction =
   };
 };
 
-export const _parseOptions = (options: fullOptionDefinition, store: Store): Array<BindOptionArrayItem> => {
+export const _parseOptions = (options: FullOptionDefinition, store: Store): Array<BindOptionArrayItem> => {
   console.warn('//////////////////////////////parse options start//////////////////////////////');
   console.warn('options input: ', options);
   let storageOptions: Array<BindOptionArrayItem> = [];
@@ -180,9 +180,9 @@ const _initStorageFlag = () => {
   }
 };
 
-const _initStorageData = (storageOptions: Array<BindOptionArrayItem>, store: Store, storageFullName: string): Array<storeToStorageItem> => {
-  const storeList: Array<storeToStorageItem> = [];
-  const initDataToSet: initDataObject = cloneDeep(store.$state);
+const _initStorageData = (storageOptions: Array<BindOptionArrayItem>, store: Store, storageFullName: string): Array<StoreToStorageItem> => {
+  const storeList: Array<StoreToStorageItem> = [];
+  const initDataToSet: InitDataObject = cloneDeep(store.$state);
   const localStorageData = JSON.parse(localStorage.getItem(storageFullName) || '{}');
   const sessionStorageData = JSON.parse(sessionStorage.getItem(storageFullName) || '{}');
   storageOptions.forEach((i) => {
@@ -225,7 +225,7 @@ export function bindStorage() {
     console.warn('storageOptions', storageOptions);
 
     // store stateKey and update function，{stateKey, Fn}
-    const storeList: Array<storeToStorageItem> = _initStorageData(storageOptions, context.store, storageFullName);
+    const storeList: Array<StoreToStorageItem> = _initStorageData(storageOptions, context.store, storageFullName);
 
     context.store.$subscribe((mutation, state) => {
       // 利用has和get分发变化

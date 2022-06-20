@@ -7,7 +7,7 @@ type ExpireCallback = <T>(oldVal: T, expireTime: number) => void
 export type ExpireTime = Date | number | string
 export type BindOptionsArray = Array<BindOptionArrayItem | string>
 export type BindToStorageFunction = (newVal: any, currentStorage: Object) => boolean
-export interface initDataObject {
+export interface InitDataObject {
   [key: string]: any
 }
 
@@ -49,15 +49,15 @@ export interface StorageDetailOptions {
   storageOptions: BindOptionsObject | Array<BindOptionArrayItem | string>
 }
 
-export type fullOptionDefinition = StorageDetailOptions | BindOptionsObject | BindOptionsArray | 'local' | 'session' | true
+export type FullOptionDefinition = StorageDetailOptions | BindOptionsObject | BindOptionsArray | 'local' | 'session' | true
 
 declare module 'pinia' {
   export interface DefineStoreOptionsBase<S, Store> {
-    storage?: fullOptionDefinition
+    storage?: FullOptionDefinition
   }
 }
 
-export interface storeToStorageItem {
+export interface StoreToStorageItem {
   stateKey: string
   fn: BindToStorageFunction
 }
